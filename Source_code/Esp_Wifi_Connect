@@ -1,1 +1,26 @@
-test
+#include <WiFi.h>                       // хелп по функциям библиотеки https://www.arduino.cc/reference/en/libraries/wifi/
+const char* ssid = "Kool 2.7";          // SSID — это символьное название беспроводной точки доступа Wi-Fi
+const char* password = "olei1987";      // Пароль от точки подключения Wi-Fi
+#define led_pin 4
+int connect_counter;
+
+void setup() {
+Serial.begin (115200);                                                // Инициирует последовательное соединение для обмена данными с компьютером
+pinMode(4, OUTPUT);
+connect_counter = 0; 
+while ((WiFi.status() != WL_CONNECTED) and (connect_counter != 5)) {  // Хепл по значениям WiFi.status https://www.arduino.cc/reference/en/libraries/wifi/wifi.status/
+  WiFi.begin (ssid, password);                                        // Инициализация подключения к сети Wi-Fi с указанными выше параметрами
+  Serial.println ("connecting");
+  connect_counter++;
+  delay(500);                                                         // Делаем 5 попыток подключения
+}
+if ((WiFi.status() != WL_CONNECTED)){                                 // Если не получилось подключиться выводим сообщение
+  Serial.println ("Connection failed");  
+}
+else{
+  Serial.println ("WiFi connected");                                  // В случае успеха вывести полученный ip адрес
+  Serial.println (WiFi.localIP());                                    // Хелп по WiFi.localIP https://www.arduino.cc/reference/en/libraries/wifi/ipaddress.localip/
+}
+}
+void loop() {
+}
