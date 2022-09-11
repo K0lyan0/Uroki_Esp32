@@ -1,6 +1,6 @@
 #include <WiFi.h>                       // хелп по функциям библиотеки https://www.arduino.cc/reference/en/libraries/wifi/
-const char* ssid = "Kool 2.7";          // SSID — это символьное название беспроводной точки доступа Wi-Fi
-const char* password = "olei1987";      // Пароль от точки подключения Wi-Fi
+const char* ssid = "****";              // SSID — это символьное название беспроводной точки доступа Wi-Fi
+const char* password = "****";          // Пароль от точки подключения Wi-Fi
 #define led_pin 4
 int connect_counter;
 
