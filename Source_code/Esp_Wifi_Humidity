@@ -1,0 +1,80 @@
+#include <DHT.h>                        // хелп по функциям библиотеки https://randomnerdtutorials.com/complete-guide-for-dht11dht22-humidity-and-temperature-sensor-with-arduino/
+#include <WiFi.h>                       // хелп по функциям библиотеки https://www.arduino.cc/reference/en/libraries/wifi/
+
+const char* ssid = "Kool 2.7";          // SSID — это символьное название беспроводной точки доступа Wi-Fi
+const char* password = "olei1987";      // Пароль от точки подключения Wi-Fi
+#define led_pin 2                       // Пин для подключения светодиода      
+#define dht_pin 15                      // Пин для подключения датчика температуры/влажности      
+#define dht_type DHT11
+int connect_counter;
+float humidity;
+float temperature;
+DHT dht_sensor(dht_pin, dht_type);
+WiFiServer server(80);
+String server_string;
+
+void setup() {
+Serial.begin (115200);                                                // Инициирует последовательное соединение для обмена данными с компьютером
+pinMode(led_pin, OUTPUT);
+connect_counter = 0;                                                  // Счетчик для количества попыток подключения
+WiFi.begin (ssid, password);                                          // Инициализация подключения к сети Wi-Fi с указанными выше параметрами
+
+while ((WiFi.status() != WL_CONNECTED) and (connect_counter != 10)) { // Хепл по значениям WiFi.status https://www.arduino.cc/reference/en/libraries/wifi/wifi.status/
+  Serial.println ("connecting");
+  connect_counter++;
+  delay(500); 
+  if (connect_counter == 20){                                         // Делаем 20 попыток подключения. Если неуспешно - перезагрузить плату.
+    ESP.restart();                                                      
+  }
+}
+
+if ((WiFi.status() == WL_CONNECTED)){                                 // Если получилось подключиться выводим сообщение и полученный ip адрес
+  Serial.println ("WiFi connected");                                  // Хелп по WiFi.localIP https://www.arduino.cc/reference/en/libraries/wifi/ipaddress.localip/                        
+  Serial.println (WiFi.localIP());
+  server.begin();                                                     // Запускаем сервер
+}
+
+dht_sensor.begin();                                                   // Запускаем датчик влажности и температуры
+}
+
+void loop() {
+WiFiClient client = server.available();                // Возвращает объект Client; если клиентов, имеющих непрочитанные данные, нет, то возвращаемый объект будет эквивалентен false. 
+//Serial.println(client);                              // По факту если использовать Serial.println(client) возвращает 0 или 1 в зависимости от того, есть данные или нет. 
+if (client) {                                          // Проверяем что пришло из client = server.available(); В это случае если пришел false - ничего не выполниться. Если пришло true запуститься код.
+  Serial.println(client);                              // Почему не рабоает конструкция if (client == true) или if (client == 1), а конструкция int test = client; if (test == true) прекрасно работает, так и не понял.
+  digitalWrite(led_pin, HIGH);                         // Мигаем светодиодом для индикации передачи данных
+  delay(1000);           
+  digitalWrite(led_pin, LOW);
+
+  humidity = dht_sensor.readHumidity();                // Получаем данные по влажности и темперетатуре. И на всякий случае выводим их в серийный порт
+  temperature = dht_sensor.readTemperature();
+  Serial.println ("humidity "); 
+  Serial.println (humidity);
+  Serial.println ("temperature "); 
+  Serial.println (temperature);
+        
+  client.flush();                                      // Удаляем любые байты, которые были записаны клиенту, но еще не отправлены ему.
+  // Собираем строку, которая будет генерировать Html код. Двойные кавычки в самом html коде надо заменить на одинарные. Иначе работать на будет. += дописывает в конец строки код. 
+  // Можно использовать .concat всесто +=  
+  server_string="<!DOCTYPE html>";
+  server_string += "<html lang='en'>";
+  server_string += "<head>";
+  server_string += "<meta charset='UTF-8'>";
+  server_string += "<meta http-equiv='X-UA-Compatible' content='IE=edge'>";
+  server_string += "<meta name='viewport' content='width=device-width, initial-scale=1.0'>";
+  server_string += "<title>DHT11</title>"; 
+  server_string += "<meta http-equiv='refresh' content='5'>";                 // Страницу обновляем раз в 5 секунд.
+  server_string += "</head>";
+  server_string += "<body>";
+  server_string += "<center>";
+  server_string += "<h4>Показания датчика DHT11</h4>";
+  server_string += "температура = "+String(temperature, 1)+"<br>";            // Для температуры и влажности сделано округление до одной цифры после запятой.
+  server_string += "влажность = "+String(humidity, 1)+" <br>";
+  server_string += " </center>";
+  server_string += "</body>";
+  server_string += "</html>";
+  client.print(server_string);                                               // Передаем собранную строку клиенту в браузер
+  Serial.println("message done, disconenct"); 
+  client.stop();                                                             // Отключаем передачу данных клиенту. Т.е. отключаем клиента от сервера
+} 
+}
